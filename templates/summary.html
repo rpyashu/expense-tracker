@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Monthly summary · SpendWise{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Monthly summary</h1>
+  <form method="get" class="month-form">
+    <label for="month" class="sr-only">Choose month</label>
+    <input id="month" name="month" type="month" value="{{ month }}">
+    <button class="btn" type="submit">View</button>
+  </form>
+</div>
+
+<h2 class="month-title">{{ month_label }}</h2>
+
+<div class="cards">
+  <div class="card stat">
+    <div class="label">Total income</div>
+    <div class="value income-text">₹{{ "{:,.2f}".format(income) }}</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Total spent</div>
+    <div class="value expense-text">₹{{ "{:,.2f}".format(spent) }}</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Net savings</div>
+    <div class="value {{ 'income-text' if savings >= 0 else 'expense-text' }}">
+      ₹{{ "{:,.2f}".format(savings) }}
+    </div>
+  </div>
+</div>
+
+{% if change is not none %}
+<p class="insight">
+  {% if change > 0 %}
+    You spent {{ change|round(1) }}% more than in {{ prev_label }}.
+  {% elif change < 0 %}
+    You spent {{ (change|abs)|round(1) }}% less than in {{ prev_label }}.
+  {% else %}
+    You spent the same as in {{ prev_label }}.
+  {% endif %}
+</p>
+{% endif %}
+
+{% if categories %}
+<div class="chart-grid">
+  <div class="card">
+    <h3>Spending by category</h3>
+    <div class="chart-box">
+  <canvas id="categoryChart"
+          data-labels='{{ cat_labels|tojson }}'
+          data-values='{{ cat_values|tojson }}'></canvas>
+</div>
+  </div>
+  <div class="card">
+    <h3>Last 6 months</h3>
+    <div class="chart-box">
+  <canvas id="trendChart"
+          data-labels='{{ trend_labels|tojson }}'
+          data-values='{{ trend_values|tojson }}'></canvas>
+</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Category breakdown</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th class="right">Entries</th><th class="right">Share</th><th class="right">Total</th></tr>
+    </thead>
+    <tbody>
+      {% for c in categories %}
+      <tr>
+        <td>{{ c.category }}</td>
+        <td class="right">{{ c.entries }}</td>
+        <td class="right">{{ ((c.total / spent) * 100)|round(1) }}%</td>
+        <td class="right">₹{{ "{:,.2f}".format(c.total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <p class="muted">No expenses recorded for {{ month_label }}. Pick another month or add some entries.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if categories %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+  const colors = ["#134E4A", "#2DD4BF", "#F59E0B", "#94A3B8", "#3B82F6", "#EF4444"];
+  const catCanvas = document.getElementById("categoryChart");
+  const trendCanvas = document.getElementById("trendChart");
+
+  new Chart(catCanvas, {
+    type: "doughnut",
+    data: {
+      labels: JSON.parse(catCanvas.dataset.labels),
+      datasets: [{ data: JSON.parse(catCanvas.dataset.values), backgroundColor: colors }]
+    },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+  });
+
+  new Chart(trendCanvas, {
+    type: "bar",
+    data: {
+      labels: JSON.parse(trendCanvas.dataset.labels),
+      datasets: [{ label: "Spent (₹)", data: JSON.parse(trendCanvas.dataset.values), backgroundColor: "#0F766E" }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

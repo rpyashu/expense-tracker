@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Overview · SpendWise{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Overview</h1>
+    <p class="muted">Your money for the year</p>
+  </div>
+  <div class="year-nav">
+    <a class="icon-link" href="{{ url_for('dashboard', year=year - 1) }}" aria-label="Previous year">‹</a>
+    <span class="year">{{ year }}</span>
+    <a class="icon-link" href="{{ url_for('dashboard', year=year + 1) }}" aria-label="Next year">›</a>
+  </div>
+</header>
+
+{% if not has_plan %}
+<div class="notice">
+  Set your yearly income to see your balance. <a href="{{ url_for('income') }}">Set income</a>
+</div>
+{% endif %}
+
+<section class="hero">
+  <div class="hero-label">Balance left</div>
+  <div class="hero-value {{ 'neg' if balance < 0 }}">{{ balance|inr }}</div>
+    <progress class="{{ 'over' if balance < 0 }}" value="{{ used_pct|round(1) }}" max="100"
+            aria-label="Share of your money used"></progress>
+  <p class="muted">{{ used_pct|round|int }}% of {{ available|inr }} used</p>
+  {% if balance < 0 %}
+  <p class="neg">You have used more than your yearly income.</p>
+  {% endif %}
+</section>
+
+<section class="stats">
+  <div class="stat"><span class="label">Yearly income</span><span class="value">{{ yearly_income|inr }}</span></div>
+  <div class="stat"><span class="label">Added (extra income + borrowed)</span><span class="value pos">{{ added|inr }}</span></div>
+  <div class="stat"><span class="label">Deducted</span><span class="value neg">{{ deducted|inr }}</span></div>
+</section>
+
+<section class="panel">
+  <h2>Breakdown for {{ year }}</h2>
+  <ul class="list">
+    {% for b in breakdown %}
+    <li>
+      <span>{{ b.label }}</span>
+      <span class="{{ 'pos' if b.sign > 0 else 'neg' }}">{{ '+' if b.sign > 0 else '−' }}{{ b.total|inr }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Recent entries</h2>
+    <a href="{{ url_for('add_expense') }}">+ Add entry</a>
+  </div>
+  {% if recent %}
+  <ul class="list">
+    {% for r in recent %}
+    <li>
+      <div class="meta">
+        <strong>{{ r.category }}</strong>
+        <span class="muted small">{{ r.expense_date }} · {{ r.type_label }}{% if r.note %} · {{ r.note }}{% endif %}</span>
+      </div>
+      <span class="{{ 'pos' if r.sign > 0 else 'neg' }}">{{ '+' if r.sign > 0 else '−' }}{{ r.amount|inr }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No entries yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SpendWise{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{{ 'with-nav' if session.user_id }}">
+  {% if session.user_id %}
+  <nav class="nav" aria-label="Main">
+    <div class="brand">SpendWise</div>
+    <div class="nav-links">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Overview</a>
+      <a href="{{ url_for('add_expense') }}" class="{{ 'active' if request.endpoint == 'add_expense' }}">Add entry</a>
+      <a href="{{ url_for('expenses') }}" class="{{ 'active' if request.endpoint == 'expenses' }}">Sheet</a>
+      <a href="{{ url_for('summary') }}" class="{{ 'active' if request.endpoint == 'summary' }}">Monthly</a>
+      <a href="{{ url_for('income') }}" class="{{ 'active' if request.endpoint == 'income' }}">Income</a>
+    </div>
+    <a class="nav-logout" href="{{ url_for('logout') }}">Log out</a>
+  </nav>
+  {% endif %}
+
+  <main class="content {{ 'auth' if not session.user_id }}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

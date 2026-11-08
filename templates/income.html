@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Income · SpendWise{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Yearly income</h1>
+    <p class="muted">Set what you earn. Add a new entry whenever your income changes.</p>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-label">Current yearly income</div>
+  <div class="hero-value">
+    {% if current_annual is not none %}{{ current_annual|inr }}{% else %}Not set{% endif %}
+  </div>
+  {% if current_annual is not none %}
+  <p class="muted">About {{ (current_annual / 12)|inr }} per month</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Add or change income</h2>
+  <form method="post" action="{{ url_for('add_income_plan') }}" class="form-grid">
+    <div class="field">
+      <label for="annual_amount">Yearly income (₹)</label>
+      <input id="annual_amount" name="annual_amount" type="number" step="0.01" min="1"
+             inputmode="decimal" required>
+    </div>
+    <div class="field">
+      <label for="effective_from">Applies from</label>
+      <input id="effective_from" name="effective_from" type="month" value="{{ today_month }}" required>
+    </div>
+    <div class="field wide">
+      <label for="label">Note (optional)</label>
+      <input id="label" name="label" maxlength="60" placeholder="e.g. New job, salary hike">
+    </div>
+    <button class="btn" type="submit">Save income</button>
+  </form>
+  <p class="muted small">
+    Each entry applies from its month until a newer one starts, so earlier months keep their old income.
+  </p>
+</section>
+
+<section class="panel">
+  <h2>Income history</h2>
+  {% if plans %}
+  <p id="save-status" class="muted small" aria-live="polite">Click a cell to edit. Changes save automatically.</p>
+  <div class="table-wrap">
+    <table class="sheet narrow">
+      <thead>
+        <tr><th>Applies from</th><th>Yearly income (₹)</th><th>Note</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in plans %}
+        <tr data-url="{{ url_for('update_income_plan', plan_id=p.id) }}">
+          <td><input type="month" data-field="effective_from" value="{{ p.effective_from }}" aria-label="Applies from"></td>
+          <td><input type="number" step="0.01" min="1" data-field="annual_amount" value="{{ p.annual_amount }}" aria-label="Yearly income"></td>
+          <td><input data-field="label" maxlength="60" value="{{ p.label or '' }}" aria-label="Note"></td>
+          <td class="delete-cell">
+            <form method="post" action="{{ url_for('delete_income_plan', plan_id=p.id) }}"
+                  onsubmit="return confirm('Delete this income entry?');">
+              <button class="link-btn" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">No income set yet. Add your yearly income above.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sheet.js') }}"></script>
+{% endblock %}
